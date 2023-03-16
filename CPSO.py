@@ -32,7 +32,7 @@ class Particle:
     p_best = 10000  # глобально лучшее решение для всех частиц на итерации t
     p_best_coordinates = np.array([0, 0])
     p = 10000  # лучшее решение для конкретного агента
-    p_coordinates: np.array([0, 0])    # координаты на данный момент
+    p_coordinates: np.array([0, 0])  # координаты на данный момент
 
     def __int__(self, coordinates, v_max, number_of_population=0):
         self.p_coordinates = coordinates
@@ -55,10 +55,10 @@ class Particle:
                     self.array_of_speed[i] = self.v_max
                 else:
                     self.array_of_speed[i] = -1 * self.v_max
-            self.p_coordinates = self.p_coordinates + self.array_of_speed[i]    # пункт 14
+            self.p_coordinates = self.p_coordinates + self.array_of_speed[i]  # пункт 14
             self.p = min(self.p, f(self.p_coordinates))
 
-        if self.p < Particle.p_best:    # 16 пункт
+        if self.p < Particle.p_best:  # 16 пункт
             Particle.p_best = self.p
             Particle.p_best_coordinates = self.p_coordinates
 
@@ -80,12 +80,12 @@ Particle.r1 = np.array([random(), random()])
 Particle.r2 = np.array([random(), random()])
 print(Particle.r1, Particle.r2, "\n-------------------------------------------------")
 
-for i in range(20):
+for i in range(30):
     if i < 10:
         particle = Particle()
         particle.__int__([uniform(-5.12, 5.12), uniform(-5.12, 5.12)], 10.9)
     else:
         particle = Particle()
-        particle.__int__([uniform(-5.12, 5.12), uniform(-5.12, 5.12)], 14.5, 1)
-    print(i+1, "p: ", particle.p, particle.p_coordinates)
+        particle.__int__([uniform(-5.12, 5.12), uniform(-5.12, 5.12)], 14.5, i // 10)
+    print(i + 1, "p: ", particle.p, particle.p_coordinates)
 print("p_best: ", Particle.p_best, Particle.p_best_coordinates)
