@@ -27,7 +27,7 @@ class Particle:
 
     number_of_population = 0  # номер популяции, поколения
 
-    array_of_speed = np.zeros(10)  # матрица скоростей птиц, static поле
+    array_of_speed = np.zeros(10)  # матрица скоростей для агента в разные момент времени
 
     p_best = 10000  # глобально лучшее решение для всех частиц на итерации t
     p_best_coordinates = np.array([0, 0])
