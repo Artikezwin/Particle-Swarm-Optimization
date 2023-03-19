@@ -32,11 +32,13 @@ class Particle:
     p_best = 10000  # глобально лучшее решение для всех частиц на итерации t
     p_best_coordinates = np.array([0, 0])
     p = 10000  # лучшее решение для конкретного агента
-    p_coordinates: np.array([0, 0])  # координаты на данный момент
+    p_coordinates_now: np.ndarray = np.array([0, 0])  # координаты на данный момент
+    p_coordinates: np.ndarray = np.array([0, 0])
 
     def __int__(self, coordinates, v_max, number_of_population=0):
+        self.p_coordinates_now = coordinates
         self.p_coordinates = coordinates
-        self.p = min(f(self.p_coordinates), self.p)
+        self.p = min(f(self.p_coordinates_now), self.p)
         self.v_max = v_max
         self.number_of_population = number_of_population
         self.array_of_speed[0] = uniform(-1 * self.v_max, self.v_max)
@@ -48,15 +50,18 @@ class Particle:
 
         for i in range(1, len(self.array_of_speed)):
             self.array_of_speed[i] = self.array_of_speed[i - 1] * self.weight + \
-                                     self.c1 * np.dot(self.r1, Particle.p_best_coordinates - self.p_coordinates) + \
-                                     self.c2 * np.dot(self.r2, Particle.p_best_coordinates - self.p_coordinates)
+                                     self.c1 * np.dot(self.r1, Particle.p_best_coordinates - self.p_coordinates_now) + \
+                                     self.c2 * np.dot(self.r2, Particle.p_best_coordinates - self.p_coordinates_now)
             if abs(self.array_of_speed[i]) > self.v_max:  # ограничение скорости, пункт 13
                 if self.array_of_speed[i] > 0:
                     self.array_of_speed[i] = self.v_max
                 else:
                     self.array_of_speed[i] = -1 * self.v_max
-            self.p_coordinates = self.p_coordinates + self.array_of_speed[i]  # пункт 14
-            self.p = min(self.p, f(self.p_coordinates))
+            self.p_coordinates_now = self.p_coordinates_now + self.array_of_speed[i]  # пункт 14
+
+            if self.p > f(self.p_coordinates_now):
+                self.p = f(self.p_coordinates_now)
+                self.p_coordinates = self.p_coordinates_now
 
         if self.p < Particle.p_best:  # 16 пункт
             Particle.p_best = self.p
@@ -83,9 +88,9 @@ print(Particle.r1, Particle.r2, "\n---------------------------------------------
 for i in range(30):
     if i < 10:
         particle = Particle()
-        particle.__int__([uniform(-5.12, 5.12), uniform(-5.12, 5.12)], 10.9)
+        particle.__int__(np.array([uniform(-5.12, 5.12), uniform(-5.12, 5.12)]), 10.9)
     else:
         particle = Particle()
-        particle.__int__([uniform(-5.12, 5.12), uniform(-5.12, 5.12)], 14.5, i // 10)
+        particle.__int__(np.array([uniform(-5.12, 5.12), uniform(-5.12, 5.12)]), 14.5, i // 10)
     print(i + 1, "p: ", particle.p, particle.p_coordinates)
 print("p_best: ", Particle.p_best, Particle.p_best_coordinates)
