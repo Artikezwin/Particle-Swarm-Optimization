@@ -5,8 +5,8 @@
 
 float r1[2] = {0};
 float r2[2] = {0};
-float p_best;
-float *p_best_coordinates;
+float p_best = 1000.0f;
+float p_best_coordinates[2];
 
 struct Particle {
     float v_max;
@@ -16,11 +16,11 @@ struct Particle {
     int number_of_population;
     float array_of_speed[10];
     float p;
-    float *p_coordinates;
-    float *p_coordinates_best_for_obj;
+    float p_coordinates[2];
+    float p_coordinates_best_for_obj[2];
 };
 
-float f(float x[2]) {
+float f(const float x[2]) {
     int A = 10;
     float result = 0;
     for (int i = 0; i < 2; i++) {
@@ -36,7 +36,8 @@ struct Particle init(struct Particle particle,
     particle.v_max = v_max;
     particle.weight = weight;
     particle.number_of_population = number_of_population;
-    particle.p_coordinates = coordinates;
+    particle.p_coordinates[0] = coordinates[0];
+    particle.p_coordinates[1] = coordinates[1];
     particle.c1 = c1;
     particle.c2 = c2;
     particle.p = f(particle.p_coordinates);
@@ -45,7 +46,7 @@ struct Particle init(struct Particle particle,
 
 float new_matrix[2] = {0, 0};
 
-float* difference(float matrix1[], float matrix2[]) {
+float *difference(float matrix1[], float matrix2[]) {
     for (int i = 0; i < 2; i++) {
         new_matrix[i] = matrix1[i] - matrix2[i];
     }
@@ -62,29 +63,31 @@ float dot(float matrix1[], float matrix2[]) {
 
 struct Particle particle_movement(struct Particle particle) {
     particle.array_of_speed[0] = particle.v_max;
-    printf("\nflag1");
+    particle.p_coordinates_best_for_obj[0] = particle.p_coordinates[0];
+    particle.p_coordinates_best_for_obj[1] = particle.p_coordinates[1];
     for (int i = 1; i < 10; i++) {
         particle.array_of_speed[i] = particle.array_of_speed[i - 1] * particle.weight;
         particle.array_of_speed[i] +=
                 particle.c1 * dot(r1, difference(p_best_coordinates, particle.p_coordinates)) +
                 particle.c2 * dot(r2, difference(p_best_coordinates, particle.p_coordinates));
 
-        if(particle.array_of_speed[i] > particle.v_max || particle.array_of_speed[i] * -1 > particle.v_max) {
+        if (particle.array_of_speed[i] > particle.v_max || particle.array_of_speed[i] * -1 > particle.v_max) {
             particle.array_of_speed[i] = particle.v_max;
         }
         particle.p_coordinates[0] = particle.p_coordinates[0] + particle.array_of_speed[i];
         particle.p_coordinates[1] = particle.p_coordinates[1] + particle.array_of_speed[i];
-
-        if(particle.p > f(particle.p_coordinates)) {
+//        printf("\nspeed: %f, after speed: %f", particle.array_of_speed[i], f(particle.p_coordinates));
+        if (particle.p > f(particle.p_coordinates)) {
             particle.p = f(particle.p_coordinates);
-            particle.p_coordinates_best_for_obj = particle.p_coordinates;
-            printf("\nflag");
+            particle.p_coordinates_best_for_obj[0] = particle.p_coordinates[0];
+            particle.p_coordinates_best_for_obj[1] = particle.p_coordinates[1];
         }
     }
 
-    if(p_best > particle.p) {
+    if (p_best > particle.p) {
         p_best = particle.p;
-        p_best_coordinates = particle.p_coordinates_best_for_obj;
+        p_best_coordinates[0] = particle.p_coordinates_best_for_obj[0];
+        p_best_coordinates[1] = particle.p_coordinates_best_for_obj[1];
     }
 
     return particle;
@@ -92,7 +95,7 @@ struct Particle particle_movement(struct Particle particle) {
 }
 
 void print_particle(struct Particle particle) {
-    printf("%f %f %i\n", particle.v_max, particle.weight, particle.number_of_population);
+    printf("\nv_max: %f; weight: %f; population: %i\n", particle.v_max, particle.weight, particle.number_of_population);
 
     for (int i = 0; i < 2; i++) {
         printf("%f", particle.p_coordinates[i]);
@@ -120,7 +123,7 @@ int test() {
     float matrix2[2] = {10, 1.2f};
 
     float *dif = difference(matrix1, matrix2);
-    for(int i=0;i<2;i++){
+    for (int i = 0; i < 2; i++) {
         printf("\n%f", dif[i]);
     }
 
@@ -139,7 +142,7 @@ int main() {
     }
     printf("r1[0]: %f, r1[1]: %f", r1[0], r1[1]);
     printf("\nr2[0]: %f, r2[1]: %f", r2[0], r2[1]);
-    printf("\n--------------------------------\n");
+    printf("\n--------------------------------");
 
     float coordinates[2] = {0, 0};
     for (int i = 0; i < 20; i++) {
@@ -147,17 +150,18 @@ int main() {
         coordinates[1] = random(-5.12f, 5.12f);
         struct Particle particle;
         if (i < 10) {
-            particle = init(particle, 10.9f, 3.4f, 0, coordinates, random(0, 1), random(0, 1));
-//            particle = particle_movement(particle);
+            particle = init(particle, 0.9f, 3.4f, 0, coordinates, random(0, 1), random(0, 1));
+            particle = particle_movement(particle);
         } else {
-            particle = init(particle, 10.9f, 3.4f, i / 10, coordinates, random(0, 1), random(0, 1));
-//            particle = particle_movement(particle);
+            particle = init(particle, 1.9f, 3.4f, i / 10, coordinates, random(0, 1), random(0, 1));
+            particle = particle_movement(particle);
         }
+        printf("\ni: %i; %f", i, particle.p);
         print_particle(particle);
     }
 
-//    printf("\np_best: %f", p_best);
-//    printf("\ncoordinates: %f, %f", p_best_coordinates[0], p_best_coordinates[1]);
+    printf("\np_best: %f", p_best);
+    printf("\ncoordinates: %f, %f", p_best_coordinates[0], p_best_coordinates[1]);
 
     return 0;
 }
