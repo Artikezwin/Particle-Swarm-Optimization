@@ -88,9 +88,9 @@ print(Particle.r1, Particle.r2, "\n---------------------------------------------
 for i in range(30):
     if i < 10:
         particle = Particle()
-        particle.__int__(np.array([uniform(-5.12, 5.12), uniform(-5.12, 5.12)]), 10.9)
+        particle.__int__(np.array([uniform(-5.12, 5.12), uniform(-5.12, 5.12)]), 0.9)
     else:
         particle = Particle()
-        particle.__int__(np.array([uniform(-5.12, 5.12), uniform(-5.12, 5.12)]), 14.5, i // 10)
+        particle.__int__(np.array([uniform(-5.12, 5.12), uniform(-5.12, 5.12)]), 1.5, i // 10)
     print(i + 1, "p: ", particle.p, particle.p_coordinates)
 print("p_best: ", Particle.p_best, Particle.p_best_coordinates)
