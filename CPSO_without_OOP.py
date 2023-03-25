@@ -42,6 +42,7 @@ def main(v_max: float):
             array_of_speed[i] = array_of_speed[i - 1] * weight + \
                                 c1 * r1 * (p_best_coordinates - p_coordinates_now) + \
                                 c2 * r2 * (p_best_coordinates - p_coordinates_now)
+
             for k in range(dimension):
                 if array_of_speed[i][k] > 0:
                     array_of_speed[i][k] = min(array_of_speed[i][0], v_max)
