@@ -1,5 +1,4 @@
 import time
-from math import cos, pi
 from random import uniform
 from random import random
 import numpy as np
@@ -12,7 +11,7 @@ def f(x: np.ndarray):  # функция Растригена от -5.12 до 5.1
     result = 0
     n = len(x)
     for i in range(n):
-        result += x[i] ** 2 - a * cos(2 * pi * x[i])
+        result += x[i] ** 2 - a * np.cos(2 * np.pi * x[i])
 
     return a * n + result
 
@@ -26,14 +25,14 @@ def main(v_max: float):
     p_global_best = 1000.0
     p_best_coordinates = np.zeros(dimension - 1)
 
-    for j in range(100_000):
+    for j in range(50):
         coordinates = np.random.uniform(-5.12, 5.12, dimension - 1)
         c1 = random()
         c2 = random()
         p_coordinates_now = np.copy(coordinates)
         p_coordinates = np.copy(coordinates)
         p = f(coordinates)
-        array_of_speed = np.zeros((10, dimension - 1))
+        array_of_speed = np.zeros((100, dimension - 1))
 
         for k in range(dimension):
             array_of_speed[0][k] = uniform(-1 * v_max, v_max)
