@@ -58,8 +58,6 @@ def main(v_max: float):
             p_best_coordinates = p_coordinates
             p_global_best = p
 
-    # print("global_best:", p_global_best, "coordinates:", p_best_coordinates)
-
 
 start = time.time()
 main(1.9)
