@@ -16,7 +16,7 @@ float rastrigin(float x[], int dimension) {
     for (int i = 0; i < dimension - 1; i++) {
         result = result + x[i] * x[i] - A * cos(2 * M_PI * x[i]);
     }
-    return A * 2 + result;
+    return A * (dimension-1) + result;
 }
 
 float random(float min, float max) {
@@ -79,12 +79,7 @@ Particle particle_movement(Particle particle, float (*f)(float *, int), int dime
 
     if (global_best > particle.p) {
         global_best = particle.p;
-        //p_best_coordinates = particle.p_coordinates_best_for_obj;
-        for (int k = 0; k < dimension - 1; k++) {
-            p_best_coordinates[k] = particle.p_coordinates_best_for_obj[k];
-        }
-
-        printf("\np: %f %f", particle.p_coordinates_best_for_obj[0], particle.p_coordinates_best_for_obj[1]);
+        p_best_coordinates = particle.p_coordinates_best_for_obj;
     }
 
     for (int k = 0; k < dimension - 1; k++) {
@@ -119,18 +114,13 @@ Particle particle_movement(Particle particle, float (*f)(float *, int), int dime
         if (particle.p > f(particle.p_coordinates, dimension)) {
             particle.p = f(particle.p_coordinates, dimension);
             particle.p_coordinates_best_for_obj = particle.p_coordinates;
-            printf("\np: %f %f", particle.p_coordinates_best_for_obj[0], particle.p_coordinates_best_for_obj[1]);
         }
     }
 
+
     if (global_best > particle.p) {
         global_best = particle.p;
-
-        for (int k = 0; k < dimension - 1; k++) {
-            p_best_coordinates[k] = particle.p_coordinates_best_for_obj[k];
-        }
-
-        //p_best_coordinates = particle.p_coordinates_best_for_obj;
+        p_best_coordinates = particle.p_coordinates_best_for_obj;
     }
 
 }
@@ -178,7 +168,9 @@ void generate_agents(int dimension, float (*f)(float *, int)) {
         particle.p_coordinates_best_for_obj = malloc((dimension-1) * sizeof(float));
         particle.p = f(particle.p_coordinates, dimension);
 
-        p_best_coordinates = particle.p_coordinates;
+        for(int j = 0; j < dimension - 1; j++) {
+            particle.p_coordinates_best_for_obj[j] = particle.p_coordinates[j];
+        }
 
         //print_particle(particle, dimension);
 
@@ -193,15 +185,15 @@ void generate_agents(int dimension, float (*f)(float *, int)) {
 
 int test() {
     srand(time(NULL));
-    int dimension = 3;
-    generate_agents(dimension, rastrigin);
 
-    printf("\n for sveta: %f", rastrigin(p_best_coordinates, 3));
-    printf("\n%f", global_best);
+    int dimension = 2;
+    generate_agents(dimension, rastrigin);
+    printf("\nglobal best: %f", global_best);
 
     printf("\ncoordinates: ");
     for (int i = 0; i < dimension - 1; i++) {
         printf("%f ", p_best_coordinates[i]);
     }
+
     return 0;
 }
