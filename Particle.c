@@ -4,15 +4,16 @@
 #include <math.h>
 #include <time.h>
 
-float r1[2] = {0, 0};
-float r2[2] = {0, 0};
-float p_best = 1000.0f;
-float p_best_coordinates[2];
+float *r1;
+float *r2;
+float global_best = (float) INT_MAX;
+float *p_best_coordinates;
+const int kol_in_population = 400;
 
-float f(const float x[2]) {
+float rastrigin(float x[], int dimension) {
     int A = 10;
     float result = 0;
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < dimension - 1; i++) {
         result = result + x[i] * x[i] - A * cos(2 * M_PI * x[i]);
     }
     return A * 2 + result;
@@ -22,171 +23,185 @@ float random(float min, float max) {
     return min + (max - min) / RAND_MAX * rand();
 }
 
-struct Particle init(struct Particle particle,
-                     float v_max, float weight,
-                     int number_of_population, float coordinates[],
-                     float c1, float c2) {
-    particle.v_max = v_max;
-    particle.weight = weight;
-    particle.number_of_population = number_of_population;
-    particle.p_coordinates[0] = coordinates[0];
-    particle.p_coordinates[1] = coordinates[1];
-    particle.c1 = c1;
-    particle.c2 = c2;
-    particle.p = f(particle.p_coordinates);
-    return particle;
-}
-
-float new_matrix[2] = {0, 0};
-
-float *difference(float matrix1[], float matrix2[]) {
-    for (int i = 0; i < 2; i++) {
-        new_matrix[i] = matrix1[i] - matrix2[i];
+float *addition(float matrix1[], float matrix2[], int dimension) {
+    float *vrem = malloc((dimension-1) * sizeof(float));
+    for (int i = 0; i < dimension - 1; i++) {
+        vrem[i] = matrix1[i] + matrix2[i];
     }
-    return new_matrix;
+    return vrem;
 }
 
-float dot(float matrix1[], float matrix2[]) {
-    float result = 0;
-    for (int i = 0; i < 2; i++) {
-        result += matrix1[i] * matrix2[i];
+float *subtraction(float matrix1[], float matrix2[], int dimension) {
+    float *vrem = malloc((dimension-1) * sizeof(float));
+    for (int i = 0; i < dimension - 1; i++) {
+        vrem[i] = matrix1[i] - matrix2[i];
     }
-    return result;
+    return vrem;
 }
 
-struct Particle particle_movement(struct Particle particle) {
-    particle.array_of_speed[0] = particle.v_max;
-    particle.p_coordinates_best_for_obj[0] = particle.p_coordinates[0];
-    particle.p_coordinates_best_for_obj[1] = particle.p_coordinates[1];
-    for (int i = 1; i < 10; i++) {
-        particle.array_of_speed[i] = particle.array_of_speed[i - 1] * particle.weight;
-        particle.array_of_speed[i] +=
-                particle.c1 * dot(r1, difference(p_best_coordinates, particle.p_coordinates)) +
-                particle.c2 * dot(r2, difference(p_best_coordinates, particle.p_coordinates));
+float *mul_on_number(float matrix1[], float number, int dimension) {
+    float *vrem = malloc((dimension-1) * sizeof(float));
+    for (int i = 0; i < dimension - 1; i++) {
+        vrem[i] = matrix1[i] * number;
+    }
+    return vrem;
+}
 
-        if (particle.array_of_speed[i] > particle.v_max || particle.array_of_speed[i] * -1 > particle.v_max) {
-            particle.array_of_speed[i] = particle.v_max;
+float *mul(float matrix1[], float matrix2[], int dimension) {
+    float *vrem = malloc((dimension - 1) * sizeof(float));
+    for (int i = 0; i < dimension - 1; i++) {
+        vrem[i] = matrix1[i] * matrix2[i];
+    }
+    return vrem;
+}
+
+void print_particle(Particle particle, int dimension) {
+    printf("\nv_max: %f; weight: %f", particle.v_max, particle.weight);
+
+    printf("\np_coordinates: ");
+    for (int i = 0; i < dimension - 1; i++) {
+        printf("%f ", particle.p_coordinates[i]);
+    }
+
+    printf("\nc1: ");
+    for (int i = 0; i < dimension - 1; i++) {
+        printf("%f ", r1[i]);
+    }
+
+    printf("\nc2: ");
+    for (int i = 0; i < dimension - 1; i++) {
+        printf("%f ", r2[i]);
+    }
+
+}
+
+Particle particle_movement(Particle particle, float (*f)(float *, int), int dimension) {
+
+    if (global_best > particle.p) {
+        global_best = particle.p;
+        //p_best_coordinates = particle.p_coordinates_best_for_obj;
+        for (int k = 0; k < dimension - 1; k++) {
+            p_best_coordinates[k] = particle.p_coordinates_best_for_obj[k];
         }
-        particle.p_coordinates[0] = particle.p_coordinates[0] + particle.array_of_speed[i];
-        particle.p_coordinates[1] = particle.p_coordinates[1] + particle.array_of_speed[i];
-//        printf("\nspeed: %f, after speed: %f", particle.array_of_speed[i], f(particle.p_coordinates));
-        if (particle.p > f(particle.p_coordinates)) {
-            particle.p = f(particle.p_coordinates);
-            particle.p_coordinates_best_for_obj[0] = particle.p_coordinates[0];
-            particle.p_coordinates_best_for_obj[1] = particle.p_coordinates[1];
+
+        printf("\np: %f %f", particle.p_coordinates_best_for_obj[0], particle.p_coordinates_best_for_obj[1]);
+    }
+
+    for (int k = 0; k < dimension - 1; k++) {
+        particle.array_of_speed[0][k] = random(-1 * particle.v_max, particle.v_max);
+    }
+
+    for (int i = 1; i < kol_in_population; i++) {
+        particle.array_of_speed[i] = mul_on_number(particle.array_of_speed[i - 1], particle.weight, dimension);
+        particle.array_of_speed[i] = addition(
+                particle.array_of_speed[i],
+                mul(
+                        mul_on_number(r1, particle.c1, dimension),
+                        subtraction(p_best_coordinates, particle.p_coordinates, dimension), dimension),
+                dimension);
+        particle.array_of_speed[i] = addition(
+                particle.array_of_speed[i],
+                mul(
+                        mul_on_number(r2, particle.c2, dimension),
+                        subtraction(p_best_coordinates, particle.p_coordinates, dimension), dimension),
+                dimension);
+
+        for (int j = 0; j < dimension - 1; j++) {
+            if (particle.array_of_speed[i][j] > particle.v_max && particle.array_of_speed[i][j] > 0) {
+                particle.array_of_speed[i][j] = particle.v_max;
+            } else if (particle.array_of_speed[i][j] < particle.v_max && particle.array_of_speed[i][j] < 0) {
+                particle.array_of_speed[i][j] = -1 * particle.v_max;
+            }
+        }
+
+        particle.p_coordinates = addition(particle.p_coordinates, particle.array_of_speed[i], dimension);
+
+        if (particle.p > f(particle.p_coordinates, dimension)) {
+            particle.p = f(particle.p_coordinates, dimension);
+            particle.p_coordinates_best_for_obj = particle.p_coordinates;
+            printf("\np: %f %f", particle.p_coordinates_best_for_obj[0], particle.p_coordinates_best_for_obj[1]);
         }
     }
 
-    if (p_best > particle.p) {
-        p_best = particle.p;
-        p_best_coordinates[0] = particle.p_coordinates_best_for_obj[0];
-        p_best_coordinates[1] = particle.p_coordinates_best_for_obj[1];
-    }
+    if (global_best > particle.p) {
+        global_best = particle.p;
 
-    return particle;
+        for (int k = 0; k < dimension - 1; k++) {
+            p_best_coordinates[k] = particle.p_coordinates_best_for_obj[k];
+        }
+
+        //p_best_coordinates = particle.p_coordinates_best_for_obj;
+    }
 
 }
 
-void print_particle(struct Particle particle) {
-    printf("\nv_max: %f; weight: %f; population: %i\n", particle.v_max, particle.weight, particle.number_of_population);
+void generate_agents(int dimension, float (*f)(float *, int)) {
+    r1 = malloc((dimension - 1) * sizeof(float));
+    r2 = malloc((dimension - 1) * sizeof(float));
+    p_best_coordinates = malloc((dimension - 1) * sizeof(float));
 
-    for (int i = 0; i < 2; i++) {
-        printf("%f", particle.p_coordinates[i]);
+    for (int i = 0; i < dimension - 1; i++) {
+        r1[i] = random(0, 1);
+        r2[i] = random(0, 1);
     }
 
-    printf("\nc1: %f; c2: %f; p: %f", particle.c1, particle.c2, particle.p);
+    printf("r1: ");
+    for (int i = 0; i < dimension - 1; i++) {
+        printf("%f ", r1[i]);
+    }
+
+    printf("\nr2: ");
+    for (int i = 0; i < dimension - 1; i++) {
+        printf("%f ", r2[i]);
+    }
+
+    printf("\n----------------------------------");
+
+    Particle particle;
+    for (int i = 0; i < 50; i++) {
+        particle.array_of_speed = (float **) malloc(kol_in_population * sizeof(float *));
+        for (int j = 0; j < kol_in_population; j++) {
+            particle.array_of_speed[j] = (float *) malloc((dimension - 1) * sizeof(int));
+        }
+
+        particle.v_max = 1.354f;
+        particle.c1 = random(0, 1);
+        particle.c2 = random(0, 1);
+
+        particle.weight = 4.5f;
+        particle.p_coordinates = malloc((dimension-1) * sizeof(float));
+
+        for (int j = 0; j < dimension - 1; j++) {
+            particle.p_coordinates[j] = random(-5.12f, 5.12f);
+        }
+
+        particle.p_coordinates_best_for_obj = malloc((dimension-1) * sizeof(float));
+        particle.p = f(particle.p_coordinates, dimension);
+
+        p_best_coordinates = particle.p_coordinates;
+
+        //print_particle(particle, dimension);
+
+        particle = particle_movement(particle, f, dimension);
+
+        free(particle.array_of_speed);
+        free(particle.p_coordinates);
+        free(particle.p_coordinates_best_for_obj);
+    }
 }
+
 
 int test() {
-    float coordinates[2] = {0, 0};
-    struct Particle particle = init(particle, 10.9, 3.4, 0, coordinates, random(-5.12f, 5.12f), random(-5.12f, 5.12f));
-
-    if (particle.c1 == 0 || particle.c2 == 0 || particle.p != 0) {
-        return 1;
-    }
-
-    print_particle(particle);
-
-    printf("\nmatrix");
-    float matrix1[2] = {3.5f, 4};
-    float matrix2[2] = {10, 1.2f};
-
-    float *dif = difference(matrix1, matrix2);
-    for (int i = 0; i < 2; i++) {
-        printf("\n%f", dif[i]);
-    }
-
-    float multiplication = dot(matrix1, matrix2);
-    printf("\nmultiplication is %f", multiplication);
-
-    return 0;
-}
-
-int runnable() {
     srand(time(NULL));
+    int dimension = 3;
+    generate_agents(dimension, rastrigin);
 
-    for (int i = 0; i < 2; i++) {
-        r1[i] = random(0, 1);
-        r2[i] = random(0, 1);
+    printf("\n for sveta: %f", rastrigin(p_best_coordinates, 3));
+    printf("\n%f", global_best);
+
+    printf("\ncoordinates: ");
+    for (int i = 0; i < dimension - 1; i++) {
+        printf("%f ", p_best_coordinates[i]);
     }
-    printf("r1[0]: %f, r1[1]: %f", r1[0], r1[1]);
-    printf("\nr2[0]: %f, r2[1]: %f", r2[0], r2[1]);
-    printf("\n--------------------------------");
-
-    float coordinates[2] = {0, 0};
-    for (int i = 0; i < 20; i++) {
-        coordinates[0] = random(-5.12f, 5.12f);
-        coordinates[1] = random(-5.12f, 5.12f);
-        struct Particle particle;
-        if (i < 10) {
-            particle = init(particle, 0.9f, 3.4f, 0, coordinates, random(0, 1), random(0, 1));
-            particle = particle_movement(particle);
-        } else {
-            particle = init(particle, 1.9f, 3.4f, i / 10, coordinates, random(0, 1), random(0, 1));
-            particle = particle_movement(particle);
-        }
-        printf("\ni:%i; %f", i, particle.p);
-        print_particle(particle);
-    }
-
-    printf("\n----------------------------------------");
-    printf("\np_best: %f", p_best);
-    printf("\ncoordinates: %f, %f", p_best_coordinates[0], p_best_coordinates[1]);
-
-    return 0;
-}
-
-int run_with_time() {
-    double time_spent = 0.0;
-    time_t begin = clock();
-
-    srand(time(NULL));
-
-    for (int i = 0; i < 2; i++) {
-        r1[i] = random(0, 1);
-        r2[i] = random(0, 1);
-    }
-
-    float coordinates[2] = {0, 0};
-    for (int i = 0; i < 10000; i++) {
-        coordinates[0] = random(-5.12f, 5.12f);
-        coordinates[1] = random(-5.12f, 5.12f);
-        struct Particle particle;
-        if (i < 10) {
-            particle = init(particle, 0.9f, 3.4f, 0, coordinates, random(0, 1), random(0, 1));
-            particle = particle_movement(particle);
-        } else {
-            particle = init(particle, 1.9f, 3.4f, i / 10, coordinates, random(0, 1), random(0, 1));
-            particle = particle_movement(particle);
-        }
-    }
-
-    time_t end = clock();
-    time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
-
-    printf("p_best: %f", p_best);
-    printf("\ncoordinates: [%f, %f]", p_best_coordinates[0], p_best_coordinates[1]);
-    printf("\n%f seconds", time_spent);
-
     return 0;
 }
