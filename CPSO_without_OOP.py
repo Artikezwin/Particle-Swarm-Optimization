@@ -34,7 +34,11 @@ def main(v_max: float):
         p = f(coordinates)
         array_of_speed = np.zeros((100, dimension - 1))
 
-        for k in range(dimension):
+        if p_global_best > p:
+            p_best_coordinates = p_coordinates
+            p_global_best = p
+
+        for k in range(dimension - 1):
             array_of_speed[0][k] = uniform(-1 * v_max, v_max)
 
         for i in range(1, len(array_of_speed)):
@@ -42,11 +46,11 @@ def main(v_max: float):
                                 c1 * r1 * (p_best_coordinates - p_coordinates_now) + \
                                 c2 * r2 * (p_best_coordinates - p_coordinates_now)
 
-            for k in range(dimension):
+            for k in range(dimension - 1):
                 if array_of_speed[i][k] > 0:
-                    array_of_speed[i][k] = min(array_of_speed[i][0], v_max)
+                    array_of_speed[i][k] = min(array_of_speed[i][k], v_max)
                 else:
-                    array_of_speed[i][k] = max(array_of_speed[i][0], v_max)
+                    array_of_speed[i][k] = max(array_of_speed[i][k], v_max)
 
             p_coordinates_now = p_coordinates_now + array_of_speed[i]
 
