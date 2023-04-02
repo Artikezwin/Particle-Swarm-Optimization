@@ -1,8 +1,11 @@
 #include "Particle.h"
+#include "Result.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
+
+const double PI = 3.14;
 
 float *r1;
 float *r2;
@@ -14,7 +17,7 @@ float rastrigin(float x[], int dimension) {
     int A = 10;
     float result = 0;
     for (int i = 0; i < dimension - 1; i++) {
-        result = result + x[i] * x[i] - A * cos(2 * M_PI * x[i]);
+        result = result + x[i] * x[i] - A * cos(2 * PI * x[i]);
     }
     return A * (dimension-1) + result;
 }
@@ -75,7 +78,7 @@ void print_particle(Particle particle, int dimension) {
 
 }
 
-Particle particle_movement(Particle particle, float (*f)(float *, int), int dimension) {
+void particle_movement(Particle particle, float (*f)(float *, int), int dimension) {
 
     if (global_best > particle.p) {
         global_best = particle.p;
@@ -123,6 +126,7 @@ Particle particle_movement(Particle particle, float (*f)(float *, int), int dime
         p_best_coordinates = particle.p_coordinates_best_for_obj;
     }
 
+    //return particle;
 }
 
 void generate_agents(int dimension, float (*f)(float *, int)) {
@@ -135,7 +139,8 @@ void generate_agents(int dimension, float (*f)(float *, int)) {
         r2[i] = random(0, 1);
     }
 
-    printf("r1: ");
+    /** Output r1, r2
+     * printf("r1: ");
     for (int i = 0; i < dimension - 1; i++) {
         printf("%f ", r1[i]);
     }
@@ -145,7 +150,7 @@ void generate_agents(int dimension, float (*f)(float *, int)) {
         printf("%f ", r2[i]);
     }
 
-    printf("\n----------------------------------");
+    printf("\n----------------------------------");*/
 
     Particle particle;
     for (int i = 0; i < 50; i++) {
@@ -174,7 +179,7 @@ void generate_agents(int dimension, float (*f)(float *, int)) {
 
         //print_particle(particle, dimension);
 
-        particle = particle_movement(particle, f, dimension);
+        particle_movement(particle, f, dimension);
 
         free(particle.array_of_speed);
         free(particle.p_coordinates);
@@ -183,17 +188,24 @@ void generate_agents(int dimension, float (*f)(float *, int)) {
 }
 
 
-int test() {
+Result test_rastrigin(int dimension) {
+    Result result;
+    double time_spent = 0.0;
+
+    clock_t begin = clock();
+
     srand(time(NULL));
 
-    int dimension = 2;
     generate_agents(dimension, rastrigin);
-    printf("\nglobal best: %f", global_best);
 
-    printf("\ncoordinates: ");
-    for (int i = 0; i < dimension - 1; i++) {
-        printf("%f ", p_best_coordinates[i]);
-    }
+    clock_t end = clock();
 
-    return 0;
+    time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
+    result.time_spent = time_spent;
+
+    result.best_y = global_best;
+
+    result.best_solution = p_best_coordinates;
+
+    return result;
 }
