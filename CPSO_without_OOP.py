@@ -64,6 +64,6 @@ def main(v_max: float):
 
 
 start = time.time()
-main(1.9)
+main(1.354)
 end = time.time() - start
 print(end, "seconds")

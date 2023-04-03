@@ -31,6 +31,22 @@ float rastrigin(float x[], int dimension) {
     return A * (dimension-1) + result;
 }
 
+float sphere(float x[], int dimension) {
+    float result = 0;
+    for (int i = 0; i < dimension - 1; i++) {
+        result = result + x[i] * x[i];
+    }
+    return result;
+}
+
+float rozenbroke(float x[], int dimension) {
+    float result = 0;
+    for (int i = 0; i < dimension - 2; i++) {
+        result += pow((100 * x[i+1] - x[i] * x[i]), 2) + pow((x[i] - 1), 2);
+    }
+    return result;
+}
+
 float random(float min, float max) {
     return min + (max - min) / RAND_MAX * rand();
 }
@@ -137,7 +153,7 @@ void particle_movement(Particle particle, float (*f)(float *, int), int dimensio
 
 }
 
-void generate_agents(int dimension, float (*f)(float *, int)) {
+void generate_agents(int dimension, float v_max, float (*f)(float *, int)) {
     r1 = malloc((dimension - 1) * sizeof(float));
     r2 = malloc((dimension - 1) * sizeof(float));
     p_best_coordinates = malloc((dimension - 1) * sizeof(float));
@@ -167,7 +183,7 @@ void generate_agents(int dimension, float (*f)(float *, int)) {
             particle.array_of_speed[j] = (float *) malloc((dimension - 1) * sizeof(int));
         }
 
-        particle.v_max = 1.354f;
+        particle.v_max = v_max;
         particle.c1 = random(0, 1);
         particle.c2 = random(0, 1);
 
@@ -201,7 +217,7 @@ typedef struct Result {
     double time_spent;
 } Result;
 
-Result test_rastrigin(int dimension) {
+Result test_rastrigin(int dimension, float v_max) {
     Result result;
     double time_spent = 0.0;
 
@@ -209,7 +225,51 @@ Result test_rastrigin(int dimension) {
 
     srand(time(NULL));
 
-    generate_agents(dimension, rastrigin);
+    generate_agents(dimension, v_max, rastrigin);
+
+    clock_t end = clock();
+
+    time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
+    result.time_spent = time_spent;
+
+    result.best_y = global_best;
+
+    result.best_solution = p_best_coordinates;
+
+    return result;
+}
+
+Result test_sphere(int dimension, float v_max) {
+    Result result;
+    double time_spent = 0.0;
+
+    clock_t begin = clock();
+
+    srand(time(NULL));
+
+    generate_agents(dimension, v_max, sphere);
+
+    clock_t end = clock();
+
+    time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
+    result.time_spent = time_spent;
+
+    result.best_y = global_best;
+
+    result.best_solution = p_best_coordinates;
+
+    return result;
+}
+
+Result test_rozenbroke(int dimension, float v_max) {
+    Result result;
+    double time_spent = 0.0;
+
+    clock_t begin = clock();
+
+    srand(time(NULL));
+
+    generate_agents(dimension, v_max, rozenbroke);
 
     clock_t end = clock();
 
@@ -225,7 +285,8 @@ Result test_rastrigin(int dimension) {
 
 int main() {
     int dimension = 2;
-    Result result = test_rastrigin(dimension);
+    float v_max = 1.134f;
+    Result result = test_rastrigin(dimension, v_max);
     printf("Program completed in %f seconds", result.time_spent);
 
     printf("\nglobal best: %f", result.best_y);
